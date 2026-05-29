@@ -184,6 +184,7 @@ interface BalloonState {
   id: number;
   color: string;
   x: number;
+  y: number;
   size: number;
   spawnedAt: number;
 }
@@ -193,6 +194,7 @@ function generateBalloon(id: number): BalloonState {
     id,
     color: BALLOON_COLORS[id % BALLOON_COLORS.length],
     x: 5 + Math.random() * 90,
+    y: 10 + Math.random() * 65, // % from bottom — spread across full screen
     size: 80 + Math.random() * 60,
     spawnedAt: 0,
   };
@@ -407,7 +409,7 @@ function Balloon({ data, onPop }: { data: BalloonState; onPop: (id: number) => v
       className="absolute cursor-pointer select-none group"
       style={{
         left: `${data.x}%`,
-        bottom: `${5 + (data.id % 3) * 6}%`,
+        bottom: `${data.y}%`,
         width: data.size + 24,
         height: data.size * 1.4 + 24,
         transform: popped ? "scale(0)" : "scale(1)",
