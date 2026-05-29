@@ -280,9 +280,28 @@ export default function Home() {
       {/* Balloons phase */}
       {phase === "balloons" && (
         <>
-          <p className="absolute top-4 left-1/2 -translate-x-1/2 text-base sm:text-lg font-medium text-purple-700 z-10 text-center px-4 whitespace-nowrap">
-            🎈 Pop the balloons before they float away! ({goneIds.size}/{TOTAL_BALLOONS})
-          </p>
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
+            <p className="text-base sm:text-lg font-semibold text-purple-700 text-center px-4">
+              🎈 Pop the balloons before they float away!
+            </p>
+            <div className="flex gap-1.5">
+              {Array.from({ length: TOTAL_BALLOONS }, (_, i) => (
+                <div
+                  key={i}
+                  className="w-3 h-3 rounded-full transition-all duration-300"
+                  style={{
+                    background: goneIds.has(i)
+                      ? BALLOON_COLORS[i % BALLOON_COLORS.length]
+                      : "transparent",
+                    border: goneIds.has(i)
+                      ? "none"
+                      : `2px solid ${BALLOON_COLORS[i % BALLOON_COLORS.length]}40`,
+                    transform: goneIds.has(i) ? "scale(1.2)" : "scale(1)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
           <div className="absolute inset-0">
             {activeBalloons.map((b) => {
               if (goneIds.has(b.id)) return null;
@@ -348,6 +367,12 @@ export default function Home() {
           0% { opacity: 1; transform: scale(1) translateY(0); }
           100% { opacity: 0; transform: scale(0.5) translateY(-40px); }
         }
+        @keyframes balloonEnter {
+          0% { opacity: 0; transform: scale(0) rotate(-15deg); }
+          60% { opacity: 1; transform: scale(1.08) rotate(2deg); }
+          80% { transform: scale(0.95) rotate(0deg); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
       `}</style>
     </main>
   );
@@ -360,10 +385,7 @@ function Balloon({ data, onPop }: { data: BalloonState; onPop: (id: number) => v
   const [popPos, setPopPos] = useState({ x: 0, y: 0 });
   const elRef = useRef<HTMLDivElement>(null);
   const floatDelay = useRef(Math.random() * 0.8);
-
-  // Detect balloon removal from parent (auto-timeout) → fade-out animation
-  // We detect this by checking if the parent stopped rendering us.
-  // Instead, the parent will actually remove us — so we just handle the pop.
+  const enterDelay = useRef(Math.random() * 0.3);
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -371,7 +393,6 @@ function Balloon({ data, onPop }: { data: BalloonState; onPop: (id: number) => v
       const rect = e.currentTarget.getBoundingClientRect();
       setPopPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
       setPopped(true);
-      // Remove after pop animation
       setTimeout(() => onPop(data.id), 300);
     },
     [popped, fadingOut, data.id, onPop]
@@ -383,21 +404,28 @@ function Balloon({ data, onPop }: { data: BalloonState; onPop: (id: number) => v
     <div
       ref={elRef}
       onClick={handleClick}
-      className="absolute cursor-pointer select-none"
+      className="absolute cursor-pointer select-none group"
       style={{
         left: `${data.x}%`,
         bottom: `${5 + (data.id % 3) * 6}%`,
-        width: data.size,
-        height: data.size * 1.4,
+        width: data.size + 24,
+        height: data.size * 1.4 + 24,
         transform: popped ? "scale(0)" : "scale(1)",
         opacity: popped ? 0 : 1,
-        transition: popped ? "transform 0.25s ease-in, opacity 0.25s ease-in" : "opacity 0.4s ease-in",
+        transition: popped ? "transform 0.25s ease-in, opacity 0.25s ease-in" : "none",
         animation: popped
           ? "none"
-          : `float 3s ease-in-out ${floatDelay.current}s infinite, bob 2.5s ease-in-out ${floatDelay.current + 0.4}s infinite`,
+          : `float 3s ease-in-out ${floatDelay.current}s infinite, bob 2.5s ease-in-out ${floatDelay.current + 0.4}s infinite, balloonEnter 0.5s cubic-bezier(0.34,1.56,0.64,1) ${enterDelay.current}s both`,
         zIndex: popped ? 15 : 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
+      <div
+        className="transition-transform duration-200 group-hover:scale-110 group-active:scale-90"
+        style={{ width: data.size, height: data.size * 1.4 }}
+      >
       {popped && <PopParticles color={data.color} x={popPos.x} y={popPos.y} size={data.size} />}
       {!popped && <BalloonSVG color={data.color} />}
       {popped && (
@@ -406,6 +434,7 @@ function Balloon({ data, onPop }: { data: BalloonState; onPop: (id: number) => v
           POP!
         </div>
       )}
+      </div>
     </div>
   );
 }
