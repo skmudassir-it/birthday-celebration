@@ -1,10 +1,10 @@
 # Added by Hermes migration (2026-08-04)
 # This app uses next.config output:"export" -> static site in ./out.
-# Serve the out/ dir with a static server (next start does NOT work with export).
+# [start] (TOP-LEVEL, not [phases.start]) overrides the container start command.
 [phases.install]
 commands = ["npm install --no-audit --no-fund"]
 
-[phases.start]
+[start]
 cmd = "npx --yes serve@latest out -l 3000"
 
 [variables]
